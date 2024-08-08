@@ -44,6 +44,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     var window: SCWindow?
     var streamType: StreamType?
 
+    var timer: Timer?
+
     let excludedWindows = ["", "com.apple.dock", "com.apple.controlcenter", "com.apple.notificationcenterui", "com.apple.systemuiserver", "com.apple.WindowManager", "dev.mnpn.Azayaka", "com.gaosun.eul", "com.pointum.hazeover", "net.matthewpalmer.Vanilla", "com.dwarvesv.minimalbar", "com.bjango.istatmenus.status"]
 
     var statusItem: NSStatusItem!
@@ -104,6 +106,9 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
             UpdateHandler.checkForUpdates()
         }
         #endif
+
+        // Create and start the timer
+        timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(beep), userInfo: nil, repeats: true)
     }
 
     func updateAvailableContent(buildMenu: Bool) async -> Bool { // returns status of getting content from SCK
@@ -208,10 +213,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         if stream != nil {
             stopRecording()
         }
+
+        // Invalidate the timer when the application terminates
+        timer?.invalidate()
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
         return true
+    }
+
+    @objc func beep() {
+        // Play the system beep sound
+        NSSound.beep()
     }
 }
 

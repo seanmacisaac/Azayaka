@@ -61,6 +61,7 @@ extension AppDelegate {
         conf.capturesAudio = true
         conf.sampleRate = audioSettings["AVSampleRateKey"] as! Int
         conf.channelCount = audioSettings["AVNumberOfChannelsKey"] as! Int
+        conf.excludesCurrentProcessAudio = true
 
         stream = SCStream(filter: filter, configuration: conf, delegate: self)
         do {
