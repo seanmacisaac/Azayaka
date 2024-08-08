@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		078218762C654969006AD5CA /* beep.wav in Resources */ = {isa = PBXBuildFile; fileRef = 078218752C654969006AD5CA /* beep.wav */; };
 		170297D62BCD586A0035EB26 /* Updates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 170297D52BCD586A0035EB26 /* Updates.swift */; };
 		17322D4B2958D07E00185BB6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17322D4A2958D07E00185BB6 /* AppDelegate.swift */; };
 		17322D4F2958D08000185BB6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17322D4E2958D08000185BB6 /* Assets.xcassets */; };
@@ -23,6 +24,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		078218752C654969006AD5CA /* beep.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = beep.wav; sourceTree = "<group>"; };
 		170297D22BCD525F0035EB26 /* sv */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sv; path = sv.lproj/Localizable.strings; sourceTree = "<group>"; };
 		170297D52BCD586A0035EB26 /* Updates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Updates.swift; sourceTree = "<group>"; };
 		17322D472958D07E00185BB6 /* Azayaka.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Azayaka.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -72,6 +74,7 @@
 		17322D492958D07E00185BB6 /* Azayaka */ = {
 			isa = PBXGroup;
 			children = (
+				078218752C654969006AD5CA /* beep.wav */,
 				17322D4A2958D07E00185BB6 /* AppDelegate.swift */,
 				17BCDC7F295BAC9300448A97 /* Types.swift */,
 				17322D5D295929A000185BB6 /* Menu.swift */,
@@ -155,6 +158,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				078218762C654969006AD5CA /* beep.wav in Resources */,
 				17322D4F2958D08000185BB6 /* Assets.xcassets in Resources */,
 				18B09AB72BCB6D74005CDC4E /* Localizable.strings in Resources */,
 			);

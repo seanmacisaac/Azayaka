@@ -45,6 +45,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     var streamType: StreamType?
 
     var timer: Timer?
+    var audioPlayer: AVAudioPlayer?
 
     let excludedWindows = ["", "com.apple.dock", "com.apple.controlcenter", "com.apple.notificationcenterui", "com.apple.systemuiserver", "com.apple.WindowManager", "dev.mnpn.Azayaka", "com.gaosun.eul", "com.pointum.hazeover", "net.matthewpalmer.Vanilla", "com.dwarvesv.minimalbar", "com.bjango.istatmenus.status"]
 
@@ -223,8 +224,18 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     }
 
     @objc func beep() {
-        // Play the system beep sound
-        NSSound.beep()
+        // Ensure the sound file is included in the project and available
+        guard let url = Bundle.main.url(forResource: "beep", withExtension: "wav") else {
+            print("Beep sound file not found")
+            return
+        }
+
+        do {
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayer?.play()
+        } catch {
+            print("Error playing beep sound: \(error)")
+        }
     }
 }
 
