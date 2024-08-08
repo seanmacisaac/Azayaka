@@ -44,8 +44,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     var window: SCWindow?
     var streamType: StreamType?
 
-    var timer: Timer?
-    var audioPlayer: AVAudioPlayer?
+    var audioUnit: AudioUnit?
+    var sampleRate: Double = 44100.0
+    var theta: Double = 0.0
+    var beepDuration: Double = 0.2 // 200 milliseconds
+    var beepFrequency: Double = 261.63 // Middle C
+    var isBeeping: Bool = false
 
     let excludedWindows = ["", "com.apple.dock", "com.apple.controlcenter", "com.apple.notificationcenterui", "com.apple.systemuiserver", "com.apple.WindowManager", "dev.mnpn.Azayaka", "com.gaosun.eul", "com.pointum.hazeover", "net.matthewpalmer.Vanilla", "com.dwarvesv.minimalbar", "com.bjango.istatmenus.status"]
 
@@ -56,6 +60,73 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
     let preferences = NSWindow()
     let ud = UserDefaults.standard
     let UpdateHandler = Updates()
+
+    func setupAudioUnit() {
+        var desc = AudioComponentDescription(componentType: kAudioUnitType_Output,
+                                             componentSubType: kAudioUnitSubType_DefaultOutput,
+                                             componentManufacturer: kAudioUnitManufacturer_Apple,
+                                             componentFlags: 0,
+                                             componentFlagsMask: 0)
+        guard let component = AudioComponentFindNext(nil, &desc) else {
+            fatalError("Can't find default output audio component")
+        }
+
+        var audioUnit: AudioUnit?
+        AudioComponentInstanceNew(component, &audioUnit)
+        self.audioUnit = audioUnit
+
+        var input = AURenderCallbackStruct(inputProc: renderCallback,
+                                           inputProcRefCon: UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()))
+        AudioUnitSetProperty(audioUnit!,
+                             kAudioUnitProperty_SetRenderCallback,
+                             kAudioUnitScope_Input,
+                             0,
+                             &input,
+                             UInt32(MemoryLayout<AURenderCallbackStruct>.size))
+
+        var streamFormat = AudioStreamBasicDescription(mSampleRate: sampleRate,
+                                                       mFormatID: kAudioFormatLinearPCM,
+                                                       mFormatFlags: kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked,
+                                                       mBytesPerPacket: 4,
+                                                       mFramesPerPacket: 1,
+                                                       mBytesPerFrame: 4,
+                                                       mChannelsPerFrame: 1,
+                                                       mBitsPerChannel: 32,
+                                                       mReserved: 0)
+        AudioUnitSetProperty(audioUnit!,
+                             kAudioUnitProperty_StreamFormat,
+                             kAudioUnitScope_Input,
+                             0,
+                             &streamFormat,
+                             UInt32(MemoryLayout<AudioStreamBasicDescription>.size))
+
+        AudioUnitInitialize(audioUnit!)
+        AudioOutputUnitStart(audioUnit!)
+    }
+
+    let renderCallback: AURenderCallback = { inRefCon, ioActionFlags, inTimeStamp, inBusNumber, inNumberFrames, ioData in
+        let appDelegate = Unmanaged<AppDelegate>.fromOpaque(inRefCon).takeUnretainedValue()
+        let thetaIncrement = 2.0 * Double.pi * appDelegate.beepFrequency / appDelegate.sampleRate
+
+        guard let bufferPointer = ioData?.pointee.mBuffers.mData?.assumingMemoryBound(to: Float.self) else {
+            return noErr
+        }
+
+        for frame in 0..<Int(inNumberFrames) {
+            if appDelegate.isBeeping {
+                bufferPointer[frame] = Float(sin(appDelegate.theta))
+                appDelegate.theta += thetaIncrement
+            } else {
+                bufferPointer[frame] = 0.0
+            }
+
+            if appDelegate.theta > 2.0 * Double.pi {
+                appDelegate.theta -= 2.0 * Double.pi
+            }
+        }
+
+        return noErr
+    }
 
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         lazy var userDesktop = (NSSearchPathForDirectoriesInDomains(.desktopDirectory, .userDomainMask, true) as [String]).first!
@@ -108,8 +179,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
         }
         #endif
 
-        // Create and start the timer
-        timer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(beep), userInfo: nil, repeats: true)
+        setupAudioUnit()
+
+        // Create and start the timer to toggle the beep state every second
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            self.isBeeping = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + self.beepDuration) {
+                self.isBeeping = false
+            }
+        }
     }
 
     func updateAvailableContent(buildMenu: Bool) async -> Bool { // returns status of getting content from SCK
@@ -215,27 +293,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, SCStreamDelegate, SCStreamOu
             stopRecording()
         }
 
-        // Invalidate the timer when the application terminates
-        timer?.invalidate()
+        // Stop the audio unit when the application terminates
+        if let audioUnit = audioUnit {
+            AudioOutputUnitStop(audioUnit)
+            AudioComponentInstanceDispose(audioUnit)
+        }
     }
 
     func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
         return true
-    }
-
-    @objc func beep() {
-        // Ensure the sound file is included in the project and available
-        guard let url = Bundle.main.url(forResource: "beep", withExtension: "wav") else {
-            print("Beep sound file not found")
-            return
-        }
-
-        do {
-            audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.play()
-        } catch {
-            print("Error playing beep sound: \(error)")
-        }
     }
 }
 
